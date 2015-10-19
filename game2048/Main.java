@@ -19,6 +19,9 @@ public class Main {
     /** Symbolic names for the four sides of a board. */
     static enum Side { NORTH, EAST, SOUTH, WEST };
 
+    /**Symbol for the winning number. */
+    static final int AWESOMENUMBER = 2048;
+
 
     /** The main program.  ARGS may contain the options --seed=NUM,
      *  (random seed); --log (record moves and random tiles
@@ -70,28 +73,22 @@ public class Main {
     boolean play() {
         clear();
         setRandomPiece();
-        
-        
-        while (true) {                                               
+        while (true) {
             setRandomPiece();
-
             if (gameOver()) {
                 _maxScore = Math.max(_score, _maxScore);
                 _game.setScore(_score, _maxScore);
                 _game.endGame();
             }
-            
+
         GetMove:
             while (true) {
                 String key = _game.readKey();
-                
                 switch (key) {
                 case "Up": case "Down": case "Left": case "Right":
-                
                     if (!gameOver() && tiltBoard(keyToSide(key))) {
                         break GetMove;
                     }
-
                     break;
                 case "New Game":
                     return true;
@@ -100,15 +97,14 @@ public class Main {
                 default:
                     break;
                 }
-            }        
+            }
         }
     }
-    
 
-    /** Let's us know if there are any pending moves in a tile. */
-
+    /** Let's us know if there are any pending moves in a tile.
+     * returns true if there are moves pending else false.
+     */
     boolean nomoremovesleft() {
-
         for (int r = 0; r < SIZE; r++) {
             for (int c = 0; c < 3; c++) {
                 if (_board[r][c] == _board[r][c + 1]) {
@@ -116,7 +112,7 @@ public class Main {
                 }
             }
         }
-        
+
         for (int r = 0; r < 3; r++) {
             for (int c = 0; c < SIZE; c++) {
                 if (_board[r][c] == _board[r + 1][c]) {
@@ -127,12 +123,14 @@ public class Main {
         return true;
     }
 
-    /** Let's us know if there is a tile value that has 2048. */
+    /** Let's us know if there is a tile value that has 2048.
+     * it returns a boolean, if 2048 is there then true else false.
+     */
 
     boolean is2048here() {
         for (int r = 0; r < SIZE; r++) {
-            for (int c = 0; c <SIZE; c++) {
-                if ( _board[r][c] == 2048) {
+            for (int c = 0; c < SIZE; c++) {
+                if (_board[r][c] == AWESOMENUMBER) {
                     return true;
                 }
             }
@@ -142,10 +140,9 @@ public class Main {
 
     /** Return true iff the current game is over (no more moves
      *  possible). */
-
     boolean gameOver() {
-        if (_count == SQUARES && nomoremovesleft() || 
-            is2048here() ) {
+        if (_count == SQUARES && nomoremovesleft()
+            || is2048here()) {
             return true;
         }
         return false;
@@ -160,14 +157,14 @@ public class Main {
         }
         int[] tile = _game.getRandomTile();
         _count += 1;
-        
+
         while (_board[tile[1]][tile[2]] != 0) {
-            tile =_game.getRandomTile();
+            tile = _game.getRandomTile();
         }
         _board[tile[1]][tile[2]] = tile[0];
-        _game.addTile(tile[0], tile[1], tile[2]);      
+        _game.addTile(tile[0], tile[1], tile[2]);
     }
-    
+
     /** Perform the result of tilting the board toward SIDE.
      *  Returns true iff the tilt changes the board. **/
 
@@ -176,69 +173,61 @@ public class Main {
          * the board to a local array, turning it so that edge SIDE faces
          * north.  That way, you can re-use the same logic for all
          * directions.  (As usual, you don't have to). */
-        
         int[][] board = new int[SIZE][SIZE];
         boolean movemerge = false;
-        
         for (int r = 0; r < SIZE; r += 1) {
-             for (int c = 0; c < SIZE; c += 1) {
-                 board[r][c] = _board[tiltRow(side, r, c)][tiltCol(side, r, c)];
-             }
+            for (int c = 0; c < SIZE; c += 1) {
+                board[r][c] = _board[tiltRow(side, r, c)][tiltCol(side, r, c)];
+            }
         }
-        
         for (int c = 0; c < SIZE; c += 1) {
             for (int r = 0; r < SIZE; r += 1) {
-
                 if (board[r][c] == 0) {
                     for (int temp = r + 1; temp < SIZE; temp++) {
-                        if (board[temp][c] != 0){
-                            _game.moveTile(board[temp][c], tiltRow(side, temp, c), tiltCol(side, temp, c), tiltRow(side, r, c), tiltCol(side, r, c));
-
-                            movemerge = true;
-                            int tempvalue = board[temp][c];
-                            board[r][c] = tempvalue;
-                            board[temp][c] = 0;
-                            break;
+                        if (board[temp][c] != 0) {
+                            _game.moveTile(board[temp][c],
+                                           tiltRow(side, temp, c),
+                                           tiltCol(side, temp, c),
+                                           tiltRow(side, r, c),
+                                           tiltCol(side, r, c));
+                            movemerge = true; board[r][c] = board[temp][c];
+                            board[temp][c] = 0; break;
                         }
                     }
                 }
-
                 if (board[r][c] != 0 && r < SIZE) {
-                    for (int temp = r + 1; temp < SIZE ; temp++) {
-                        if (board[temp][c] != 0 && board[temp][c] != board[r][c]) { 
+                    for (int temp = r + 1; temp < SIZE; temp++) {
+                        if (board[temp][c] != 0
+                            && board[temp][c] != board[r][c]) {
                             break;
                         }
-                        if (board[temp][c] != 0 && board[temp][c] == board[r][c]) {
-                            _game.mergeTile(board[temp][c], board[temp][c] + board[r][c], tiltRow(side, temp, c), tiltCol(side, temp, c), tiltRow(side, r, c), tiltCol(side, r, c));
+                        if (board[temp][c] != 0
+                            && board[temp][c] == board[r][c]) {
+                            _game.mergeTile(board[temp][c], board[temp][c]
+                                            + board[r][c],
+                                            tiltRow(side, temp, c),
+                                            tiltCol(side, temp, c),
+                                            tiltRow(side, r, c),
+                                            tiltCol(side, r, c));
                             movemerge = true;
-                            int tileval = board[r][c] + board[temp][c];
-                             board[r][c] = tileval;
-                             board[temp][c] = 0;
-                             _count -= 1;
-                             _score += tileval; 
-                             _game.setScore(_score, _maxScore);      
-                             break;
+                            board[r][c] = board[r][c] + board[temp][c];
+                            board[temp][c] = 0;
+                            _count -= 1; _score += board[r][c];
+                            _game.setScore(_score, _maxScore); break;
                         }
-                     }
+                    }
                 }
-
-
             }
-   
+        }
 
-        }        
-         for (int r = 0; r < SIZE; r += 1) {
-             for (int c = 0; c < SIZE; c += 1) {
-                 _board[tiltRow(side, r, c)][tiltCol(side, r, c)]
-                     = board[r][c];
-             }
-         }
-
-         _game.displayMoves();
-         return movemerge;
+        for (int r = 0; r < SIZE; r += 1) {
+            for (int c = 0; c < SIZE; c += 1) {
+                _board[tiltRow(side, r, c)][tiltCol(side, r, c)] = board[r][c];
+            }
+        }
+        _game.displayMoves();
+        return movemerge;
     }
-    
-       
     /** Return the row number on a playing board that corresponds to row R
      *  and column C of a board turned so that row 0 is in direction SIDE (as
      *  specified by the definitions of NORTH, EAST, etc.).  So, if SIDE
